@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event & Course Feedback System</title>
+
+<style>
+:root{
+    --primary:#4a90e2;
+    --bg:#f4f6f9;
+    --card:#ffffff;
+    --danger:#e74c3c;
+    --success:#2ecc71;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI, sans-serif;}
+
+body{background:var(--bg);padding:20px;}
+
+nav{
+    background:var(--card);
+    padding:15px;
+    border-radius:8px;
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+nav h2{color:var(--primary);}
+
+nav button{
+    background:none;
+    border:none;
+    padding:8px 12px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+nav button.active{
+    border-bottom:2px solid var(--primary);
+    color:var(--primary);
+}
+
+.section{display:none;}
+.section.active{display:block;}
+
+.container{
+    max-width:800px;
+    margin:auto;
+    background:var(--card);
+    padding:25px;
+    border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.05);
+}
+
+h3{margin-bottom:15px;}
+
+input, textarea, select{
+    width:100%;
+    padding:8px;
+    margin:8px 0;
+    border-radius:4px;
+    border:1px solid #ccc;
+}
+
+button.btn{
+    padding:8px 15px;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-primary{background:var(--primary);color:white;}
+.btn-success{background:var(--success);color:white;}
+.btn-danger{background:var(--danger);color:white;}
+
+.question-box{
+    border:1px dashed #ccc;
+    padding:10px;
+    margin-bottom:10px;
+    position:relative;
+}
+
+.remove{
+    position:absolute;
+    top:5px;
+    right:8px;
+    color:var(--danger);
+    cursor:pointer;
+}
+
+.form-item{
+    display:flex;
+    justify-content:space-between;
+    padding:10px;
+    border:1px solid #eee;
+    margin-bottom:10px;
+    border-radius:5px;
+}
+
+.stat-card{
+    background:#eef2f7;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:6px;
+}
+
+.highlight{
+    font-size:20px;
+    font-weight:bold;
+    color:var(--primary);
+}
+</style>
+</head>
+<body>
+
+<nav>
+    <h2>FeedbackHub</h2>
+    <div>
+        <button onclick="showSection('create')" id="nav-create" class="active">Create</button>
+        <button onclick="showSection('list')" id="nav-list">Forms</button>
+        <button onclick="showSection('results')" id="nav-results">Results</button>
+    </div>
+</nav>
+
+<!-- CREATE -->
+<div id="create" class="section active">
+<div class="container">
+    <h3>Create Feedback Form</h3>
+    <input type="text" id="formTitle" placeholder="Enter Event / Course Title">
+    <div id="questionContainer"></div>
+    <button class="btn btn-primary" onclick="addQuestion()">+ Add Question</button>
+    <br><br>
+    <button class="btn btn-success" onclick="saveForm()">Save Form</button>
+</div>
+</div>
+
+<!-- LIST -->
+<div id="list" class="section">
+<div class="container">
+    <h3>Available Forms</h3>
+    <div id="formsList"></div>
+</div>
+</div>
+
+<!-- SUBMIT -->
+<div id="submit" class="section">
+<div class="container">
+    <button class="btn" onclick="showSection('list')">← Back</button>
+    <h3 id="submitTitle"></h3>
+    <label><input type="checkbox" id="anonymous"> Submit Anonymously</label>
+    <form id="feedbackForm"></form>
+</div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="section">
+<div class="container">
+    <h3>View Results</h3>
+    <select id="resultSelector" onchange="renderResults()"></select>
+    <div id="resultContent"></div>
+</div>
+</div>
+
+<script>
+// STORAGE
+function getData(key){ return JSON.parse(localStorage.getItem(key)) || []; }
+function setData(key,data){ localStorage.setItem(key,JSON.stringify(data)); }
+
+// NAVIGATION
+function showSection(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.getElementById('nav-'+id)?.classList.add('active');
+
+    if(id==='list') loadForms();
+    if(id==='results') loadSelectors();
+}
+
+// ADD QUESTION
+function addQuestion(){
+    const container=document.getElementById('questionContainer');
+    const div=document.createElement('div');
+    div.className='question-box';
+    div.innerHTML=`
+        <span class="remove" onclick="this.parentElement.remove()">✖</span>
+        <input type="text" class="q-text" placeholder="Question text">
+        <select class="q-type" onchange="toggleOptions(this)">
+            <option value="text">Text</option>
+            <option value="rating">Rating (1-5)</option>
+            <option value="choice">Multiple Choice</option>
+        </select>
+        <input type="text" class="q-options" placeholder="Comma separated options" style="display:none;">
+    `;
+    container.appendChild(div);
+}
+
+function toggleOptions(select){
+    const options=select.parentElement.querySelector('.q-options');
+    options.style.display = select.value==='choice' ? 'block':'none';
+}
+
+// SAVE FORM
+function saveForm(){
+    const title=document.getElementById('formTitle').value;
+    if(!title) return alert("Enter title");
+
+    const questions=[];
+    document.querySelectorAll('.question-box').forEach(box=>{
+        questions.push({
+            text:box.querySelector('.q-text').value,
+            type:box.querySelector('.q-type').value,
+            options:box.querySelector('.q-options').value
+        });
+    });
+
+    if(!questions.length) return alert("Add at least one question");
+
+    const forms=getData('forms');
+    forms.push({id:Date.now(),title,questions});
+    setData('forms',forms);
+
+    alert("Form Saved!");
+    document.getElementById('formTitle').value='';
+    document.getElementById('questionContainer').innerHTML='';
+}
+
+// LOAD FORMS
+function loadForms(){
+    const forms=getData('forms');
+    const container=document.getElementById('formsList');
+    container.innerHTML='';
+
+    if(!forms.length){
+        container.innerHTML="<p>No forms yet</p>";
+        return;
+    }
+
+    forms.forEach(form=>{
+        container.innerHTML+=`
+        <div class="form-item">
+            <strong>${form.title}</strong>
+            <button class="btn btn-primary" onclick="openForm(${form.id})">Fill</button>
+        </div>`;
+    });
+}
+
+// OPEN FORM
+function openForm(id){
+    const form=getData('forms').find(f=>f.id===id);
+    if(!form) return;
+
+    document.getElementById('submitTitle').innerText=form.title;
+    const container=document.getElementById('feedbackForm');
+    container.innerHTML='';
+
+    form.questions.forEach((q,i)=>{
+        let html=`<label><strong>${q.text}</strong></label>`;
+
+        if(q.type==='text'){
+            html+=`<textarea name="q${i}" required></textarea>`;
+        }
+        else if(q.type==='rating'){
+            for(let r=1;r<=5;r++){
+                html+=`<label><input type="radio" name="q${i}" value="${r}" required> ${r}</label> `;
+            }
+        }
+        else{
+            q.options.split(',').forEach(opt=>{
+                html+=`<label><input type="radio" name="q${i}" value="${opt.trim()}" required> ${opt.trim()}</label><br>`;
+            });
+        }
+
+        container.innerHTML+=html+"<br><br>";
+    });
+
+    container.innerHTML+=`<button type="button" class="btn btn-success" onclick="submitFeedback(${id})">Submit</button>`;
+
+    showSection('submit');
+}
+
+// SUBMIT
+function submitFeedback(id){
+    const form=getData('forms').find(f=>f.id===id);
+    const formEl=document.getElementById('feedbackForm');
+    const data=new FormData(formEl);
+
+    const responses=getData('responses');
+
+    const response={
+        formId:id,
+        anonymous:document.getElementById('anonymous').checked,
+        answers:[]
+    };
+
+    form.questions.forEach((q,i)=>{
+        response.answers.push({
+            question:q.text,
+            type:q.type,
+            answer:data.get('q'+i)
+        });
+    });
+
+    responses.push(response);
+    setData('responses',responses);
+
+    alert("Feedback Submitted!");
+    showSection('list');
+}
+
+// RESULTS
+function loadSelectors(){
+    const forms=getData('forms');
+    const select=document.getElementById('resultSelector');
+    select.innerHTML="<option>Select Form</option>";
+    forms.forEach(f=>{
+        select.innerHTML+=`<option value="${f.id}">${f.title}</option>`;
+    });
+}
+
+function renderResults(){
+    const id=parseInt(document.getElementById('resultSelector').value);
+    const container=document.getElementById('resultContent');
+    container.innerHTML='';
+
+    const form=getData('forms').find(f=>f.id===id);
+    const responses=getData('responses').filter(r=>r.formId===id);
+
+    if(!responses.length){
+        container.innerHTML="<p>No responses yet.</p>";
+        return;
+    }
+
+    form.questions.forEach((q,i)=>{
+        let content=`<strong>${q.text}</strong><br><br>`;
+
+        if(q.type==='rating'){
+            let total=0;
+            responses.forEach(r=> total+=parseInt(r.answers[i].answer||0));
+            const avg=(total/responses.length).toFixed(2);
+            content+=`<div class="highlight">${avg}/5</div>`;
+        }
+        else if(q.type==='choice'){
+            const counts={};
+            q.options.split(',').forEach(o=>counts[o.trim()]=0);
+            responses.forEach(r=>{
+                counts[r.answers[i].answer]++;
+            });
+            for(let opt in counts){
+                content+=`${opt}: ${counts[opt]}<br>`;
+            }
+        }
+        else{
+            content+=`Total Responses: ${responses.length}`;
+        }
+
+        container.innerHTML+=`<div class="stat-card">${content}</div>`;
+    });
+}
+
+// INITIAL LOAD
+window.onload=loadForms;
+</script>
+
+</body>
+</html>
