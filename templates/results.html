@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Results</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <h2>FeedbackHub</h2>
+    <div>
+        <a href="/create">Create</a>
+        <a href="/forms">Forms</a>
+        <a href="/results">Results</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="result-container">
+    <h3>View Results</h3>
+    <select id="resultSelector" onchange="renderResults()"></select>
+    <div id="resultContent"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+    loadSelectors();
+</script>
+</body>
+</html>

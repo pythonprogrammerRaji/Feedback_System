@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Submit Form</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <h2>FeedbackHub</h2>
+    <div>
+        <a href="/forms">Back to Forms</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h3 id="submitTitle"></h3>
+    <label><input type="checkbox" id="anonymous">Submit Anonymously</label>
+    <form id="feedbackForm"></form>
+</div>
+
+
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const formId = parseInt(params.get("id"));
+
+    if (formId) {
+        openForm(formId);
+    }
+</script>
+</body>
+</html>

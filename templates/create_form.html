@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Create Form</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+    <h2>FeedbackHub</h2>
+    <div>
+        <a href="/create">Create</a>
+        <a href="/forms">Forms</a>
+        <a href="/results">Results</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="create-container">
+    <h3>Create Feedback Form</h3>
+    <input type="text" id="formTitle" placeholder="Enter Event / Course Title">
+    <div id="questionContainer"></div>
+    <button class="btn btn-primary" onclick="addQuestion()">+ Add Question</button>
+    <br><br>
+    <button class="btn btn-success" onclick="saveForm()">Save Form</button>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

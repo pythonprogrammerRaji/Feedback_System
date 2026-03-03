@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Forms List</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body onload="loadForms()">
+
+<nav>
+    <h2>FeedbackHub</h2>
+    <div>
+        <a href="/create">Create</a>
+        <a href="/forms">Forms</a>
+        <a href="/results">Results</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="form-container">
+    <h3>Available Forms</h3>
+    <div id="formsList"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
